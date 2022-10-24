@@ -1,12 +1,128 @@
 const { Router } = require('express');
+const { API_KEY } = process.env
 // Importar todos los routers;
 // Ejemplo: const authRouter = require('./auth.js');
-
-
+// Importamos las tablas creadas en nuestra base de datos
+const { Dog, Temperament } = require('../db')
+// Para tratar la informacion extraida de la API usaremos Axios, por tanto debe ser importados con sus dependencias 
+const axios = require('axios')
 const router = Router();
 
 // Configurar los routers
 // Ejemplo: router.use('/auth', authRouter);
 
+// En primera instancia debemos traer la informacion desde la API
+
+const getApiInfo = async () => {
+    const apiUrl = await axios.get(`https://api.thedogapi.com/v1/breeds?api_key=${API_KEY}`)
+    .catch (e => console.log(e)); 
+    const apiInfo = await apiUrl.data.map(el => {
+        return {
+            id: el.id,
+            name: el.name,
+            height: `${el.height.metric} cm`,
+            weight: `${el.weight.metric} cm`,
+            lifeSpan: el.life_span,
+            image: el.image.url,
+        }
+    });
+    return apiInfo;
+};
+
+// Ahora traemos la información que se guardara en la base de datos
+
+const getDbInfo = async () => {
+    return await Dog.findAll({
+        include: {
+            model: Temperament,
+            attributes: ['name'],
+            through: {
+                attributes: []
+            }
+        }
+    })
+};
+ // Una vez obtenida la información desde la API y la DB, se combina para entregar la información mas completa
+
+const getAllDogs = async () => {
+    const apiInfo = await getApiInfo();
+    const dbInfo = await getDbInfo();
+    const totalInfo = apiInfo.concat(dbInfo);
+    return totalInfo;
+};
+
+router.get('/dogs', async (req, res) => {
+    let { name } = req.query;
+    const totalDogs = await getAllDogs();
+    try {
+        if(name) {
+            let dogName = await totalDogs.filter( dog => dog.name.toLowerCase().includes(name.toLowerCase()));
+            dogName.length ? 
+            res.status(200).send(dogName) :
+            res.status(404).send('No se pudo encontrar la informacion solicitada')
+        } else {
+            res.status(200).send(totalDogs);
+        }
+    } catch (e) {
+        console.log(e)
+    }
+});
+
+router.get('/dogs/:id', async (req, res) => {
+    let { id } = req.params;
+    let totalDogs = await getAllDogs();
+    
+    if(id) {
+        let dogId = await totalDogs.filter( el => el.id == id);
+        dogId.length ? 
+        res.status(200).send(dogId) :
+        res.status(404).send(`No se hallaron coincidencias para el ${id} ingresado`)
+    }
+});
+
+router.post('/dogs', async (req, res) => {
+    let {
+        name,
+        height,
+        weight,
+        lifeSpan,
+        temperament
+    } = req.body;
+
+    let dogCreate = await Dog.create({
+        name,
+        height,
+        weight,
+        lifeSpan
+    });
+    
+    let temperamentDb = await Temperament.findAll({
+        where: { name: temperament }
+    });
+
+    await dogCreate.addTemperament(temperamentDb);
+
+    res.status(201).send('Dog creado correctamente')
+});
+
+router.get('/temperaments', async (req, res) => {
+    const dogsApi = await axios.get(`https://api.thedogapi.com/v1/breeds?api_key=${API_KEY}`)
+    .catch( e => console.log(e) );
+    const temperaments = dogsApi.data.map(el => el.temperament?.split(', '))
+    console.log(temperaments);
+    const tempsEach = temperaments.flat(Infinity);
+    console.log(tempsEach)
+    const tempsTypes = [... new Set(tempsEach)];
+    console.log(tempsTypes);
+    tempsTypes.forEach( el => {
+        if (el) {
+            Temperament.findOrCreate({
+                where: { name: el }
+            })
+        } else return 'Temperament not Found';
+    })
+    const allTemps = await Temperament.findAll()
+    res.status(200).send(allTemps)
+})
 
 module.exports = router;
