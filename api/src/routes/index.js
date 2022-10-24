@@ -125,4 +125,13 @@ router.get('/temperaments', async (req, res) => {
     res.status(200).send(allTemps)
 })
 
+/*router.delete('/dogs/:id', async (req, res) => {
+    let { id } = req.params;
+    let totalDogs = await getAllDogs();
+    let dogId = await totalDogs.find( d => d.id == id);
+    if (!dogId) return res.status(404).send(`No se hallaron coincidencias para el ${id} ingresado`)
+    totalDogs = await totalDogs.filter(d => d.id !== id);
+    res.status(200).send('Done');
+})*/
+
 module.exports = router;
