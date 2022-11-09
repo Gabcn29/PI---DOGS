@@ -21,9 +21,10 @@ const getApiInfo = async () => {
             id: el.id,
             name: el.name,
             height: `${el.height.metric} cm`,
-            weight: `${el.weight.metric} cm`,
+            weight: `${el.weight.metric} kg`,
             lifeSpan: el.life_span,
             image: el.image.url,
+            temperament: el.temperament,
         }
     });
     return apiInfo;
