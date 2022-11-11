@@ -7,10 +7,10 @@ export const SORT_BY_WEIGHT = 'SORT_BY_WEIGHT'; //YA, filtro funciona
 export const SORT_BY_NAME = 'SORT_BY_NAME';//YA, ordenamiento funciona
 export const FILTER_BY_SOURCE = 'FILTER_BY_SOURCE';//YA, filtro funciona
 export const POST_DOG = 'POST_DOG';//  , post del dog que entra por form
-export const DOG_DETAILS = 'DOG_DETAILS';
-export const DELETE_DOG = 'DELETE_DOG';//Not yet
+export const DOG_DETAILS = 'DOG_DETAILS'; //Ya, se renderizan los detalles 
 export const GET_TEMPERAMENTS = 'GET_TEMPERAMENTS';//NOT YET
 export const GET_NAME_DOGS = 'GET_NAME_DOGS'////YA, renderiza el dog que se busca por el searchbar
+export const CLEAN_DETAILS = 'CLEAN DETAILS'
 
 //Una vez declaradas las constantes de las acciones se realizan peticiones a la ruta de nuestro proyecto, en este caso 
 //a la ruta que nos conecta con nuestro backend, 'http://localhost:3001/dogs'.
@@ -49,7 +49,7 @@ export function sortByWeight (payload) {
         payload
     }
 }
-
+//Falta este hijo de la gran p
 export function filterByTemperament (payload) {    
     
     return {
@@ -59,12 +59,17 @@ export function filterByTemperament (payload) {
 }
 
 export const getTemperaments = () => async dispatch => {
-    return await fetch.get('http://localhost:3001/temperaments')
-                .then(res => res.json)
-                .then(data => dispatch({
-                    type: GET_TEMPERAMENTS,
-                    payload: data
-                }))
+    try {
+        let json = await axios.get('http://localhost:3001/temperaments');
+        
+        return dispatch({
+            type: GET_TEMPERAMENTS,
+            payload: json.data
+        })
+    }
+    catch (e){
+        console.log(e)
+    }
 };
 
 export const postDog = (payload) => async dispatch => {
@@ -85,6 +90,27 @@ export function getNameDogs(name) {
         catch (e) {
             console.log(e)
         }
+    }
+}
+
+export function dogDetails(id) {
+    return async function (dispatch){
+        try {
+            let json = await axios.get('http://localhost:3001/dogs/' + id);
+            return dispatch({
+                type: DOG_DETAILS,
+                payload: json.data
+            })
+        }
+        catch (e) {console.log(e)}
+    }
+}
+
+export function cleanDetails() {
+    return async function (dispatch){
+        return dispatch ({
+            type: CLEAN_DETAILS
+        })
     }
 }
 

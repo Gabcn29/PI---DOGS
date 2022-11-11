@@ -25,6 +25,7 @@ const getApiInfo = async () => {
             lifeSpan: el.life_span,
             image: el.image.url,
             temperament: el.temperament,
+            breed: el.breed_group
         }
     });
     return apiInfo;
@@ -87,23 +88,37 @@ router.post('/dogs', async (req, res) => {
         height,
         weight,
         lifeSpan,
+        image,
         temperament
     } = req.body;
-
-    let dogCreate = await Dog.create({
-        name,
-        height,
-        weight,
-        lifeSpan
-    });
+    try {
+        
+        let validateDog = await Dog.findOne({where: {name: name}})
+        if(!validateDog){
+            let dogCreate = await Dog.create({
+                name,
+                height: `${height.height_min} - ${height.height_max} cm`,
+                weight: `${weight.weight_min} - ${weight.weight_max} cm`,
+                lifeSpan,
+                image
+            });
+            
+            let temperamentDb = await Temperament.findAll({
+                where: { name: temperament }
+            });
+        
+            await dogCreate.addTemperament(temperamentDb);
+        
+            res.status(201).send('Dog creado correctamente')
+        }
+        else {
+            res.status(202).send('Dog existente en memoria')
+        }
+    }
+    catch (e) {
+        res.status(400).send(e)
+    }
     
-    let temperamentDb = await Temperament.findAll({
-        where: { name: temperament }
-    });
-
-    await dogCreate.addTemperament(temperamentDb);
-
-    res.status(201).send('Dog creado correctamente')
 });
 
 router.get('/temperaments', async (req, res) => {
@@ -114,8 +129,9 @@ router.get('/temperaments', async (req, res) => {
     const tempsEach = temperaments.flat(Infinity);
     console.log(tempsEach)
     const tempsTypes = [... new Set(tempsEach)];
-    console.log(tempsTypes);
-    tempsTypes.forEach( el => {
+    const sortTemps = tempsTypes.sort()
+    console.log(sortTemps);
+    sortTemps.forEach( el => {
         if (el) {
             Temperament.findOrCreate({
                 where: { name: el }

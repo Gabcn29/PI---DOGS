@@ -1,13 +1,15 @@
 // Importamos las actions types desde nuestra carpeta de acciones
 
-import { GET_ALL_DOGS, FILTER_BY_TEMPERAMENT, SORT_BY_WEIGHT, SORT_BY_NAME, FILTER_BY_SOURCE, DOG_DETAILS, POST_DOG, DELETE_DOG, GET_NAME_DOGS, GET_TEMPERAMENTS} from '../Actions/index';
+import { GET_ALL_DOGS, FILTER_BY_TEMPERAMENT, SORT_BY_WEIGHT, SORT_BY_NAME, FILTER_BY_SOURCE, DOG_DETAILS, POST_DOG, GET_NAME_DOGS, GET_TEMPERAMENTS, CLEAN_DETAILS} from '../Actions/index';
 
 // Definimos nuestro estado inicial 
 
 const initialState = {
     Alldogs: [],
     dogs: [],
-    temperaments: []
+    temperaments: [],
+    breed_group: [],
+    details: []
 }
 
 // Definimos nuestro root reducer, que tendra como parametros iniciales un estado que sera igual a initialState, y una acción que correspondera con nuestras actions creadas.
@@ -82,17 +84,20 @@ function rootReducer(state = initialState, action) {
             };
 
         case FILTER_BY_TEMPERAMENT: 
-
+        console.log(action.payload)
+            const filteredByTemps = state.Alldogs.filter(el => 
+                el.createdInDb ? el.temperaments?.includes(action.payload) : el.temperament?.includes(action.payload)
+            )
             return {
                 ...state,
-                dogs: action.payload
+                dogs: filteredByTemps
             };
 
         case DOG_DETAILS: 
-
+            console.log(action.payload)
             return {
                 ...state,
-                dogs: action.payload
+               details: action.payload
             };
 
         case POST_DOG: 
@@ -101,25 +106,26 @@ function rootReducer(state = initialState, action) {
                 ...state
             };
 
-        case DELETE_DOG: 
-
-            return {
-                ...state,
-                dogs: action.payload
-            };    
-            
+        
         case GET_NAME_DOGS:
 // Este caso nos permite acceder a la busqueda realizada por la searchbar y asi poder renderizar los resultados que se encuentran en el payload; si el payload se no contiene nada debido a que no se ingreso nada en el searchbar y se ejecuto el boton, se renderiza todo nuevamente. Preguntar a ver si se deja asi o no.
             return {
                 ...state,
-                dogs: action.payload.length ? action.payload : action.Alldogs
+                dogs: action.payload
             };
         
         case GET_TEMPERAMENTS:
-
+            
             return {
                 ...state,
                 temperaments: action.payload
+            };
+
+        case CLEAN_DETAILS:
+
+            return{
+                ...state, 
+                details: []
             }
             
         default:
